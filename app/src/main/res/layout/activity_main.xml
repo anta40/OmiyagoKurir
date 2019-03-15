@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="fill_parent">
+
+    <!-- Replaced android.support.v7.widget.RecyclerView with the
+         new EmptyRecyclerView -->
+    <com.app.omiyago.kurir.ui.CustomRecyclerView
+        android:id="@+id/todo_list_recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <!-- Added an empty view which will be shown when the EmptyRecyclerView
+         is empty -->
+    <LinearLayout
+        android:id="@+id/todo_list_empty_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:textAlignment="center">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:padding="16dp"
+            android:text="Belum ada barang yang discan"/>
+
+        <LinearLayout
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:layout_width="fill_parent"
+            android:layout_gravity="bottom"
+            android:gravity="center"
+            android:layout_height="0dp">
+
+            <Button
+                android:id="@+id/btn_scan"
+                android:layout_width="80dp"
+                android:layout_gravity="center"
+                android:layout_height="wrap_content"
+                android:padding="2dp"
+                android:text="Scan" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btn_scan_2"
+        android:layout_width="80dp"
+        android:layout_gravity="center"
+        android:layout_height="45dp"
+        android:padding="2dp"
+        android:text="Scan" />
+
+
+
+</LinearLayout>
