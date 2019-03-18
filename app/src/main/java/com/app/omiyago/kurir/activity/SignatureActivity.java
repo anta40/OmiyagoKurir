@@ -2,7 +2,9 @@ package com.app.omiyago.kurir.activity;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
+import android.graphics.EmbossMaskFilter;
 import android.graphics.MaskFilter;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -16,9 +18,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Toast;
 
 import com.app.omiyago.kurir.R;
+import com.app.omiyago.kurir.model.ScannedItem;
 import com.app.omiyago.kurir.ui.ColorPickerDialog;
+import com.app.omiyago.kurir.util.Constants;
+import com.app.omiyago.kurir.util.DBHelper;
 
 import java.io.ByteArrayOutputStream;
 
@@ -29,11 +35,45 @@ public class SignatureActivity extends AppCompatActivity implements ColorPickerD
     private MaskFilter mBlur;
     AlertDialog dialog;
     MyView mv;
+    DBHelper db;
+    int item_id;
+    String tipe_ttd;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_signature);
+
+        db = new DBHelper(getApplicationContext());
+
+        tipe_ttd = getIntent().getStringExtra("tipe_ttd");
+
+        if (tipe_ttd.equals("kurir"))
+            getSupportActionBar().setTitle("Tanda Tangan Kurir");
+        else
+            getSupportActionBar().setTitle("Tanda Tangan Penerima");
+
+        item_id = getIntent().getIntExtra("item_id", -1);
+
+        mv= new MyView(this);
+        mv.setDrawingCacheEnabled(true);
+        //mv.setBackgroundResource(R.drawable.afor);//set the back ground if you wish to
+        setContentView(mv);
+        mPaint = new Paint();
+        mPaint.setAntiAlias(true);
+        mPaint.setDither(true);
+        mPaint.setColor(0xFFFF0000);
+        mPaint.setStyle(Paint.Style.STROKE);
+        mPaint.setStrokeJoin(Paint.Join.ROUND);
+        mPaint.setStrokeCap(Paint.Cap.ROUND);
+        mPaint.setStrokeWidth(20);
+        mEmboss = new EmbossMaskFilter(new float[] { 1, 1, 1 },
+                0.4f, 6, 3.5f);
+        mBlur = new BlurMaskFilter(8, BlurMaskFilter.Blur.NORMAL);
+
+
+        //Toast.makeText(getApplicationContext(), "Tipe TTD: "+tipe_ttd+", item ID: "+item_id,
+        //        Toast.LENGTH_SHORT).show();
     }
 
     @Override
@@ -144,6 +184,7 @@ public class SignatureActivity extends AppCompatActivity implements ColorPickerD
     private static final int COLOR_MENU_ID = Menu.FIRST;
     private static final int CLEAR_MENU_ID = Menu.FIRST + 1;
     private static final int SAVE_MENU_ID = Menu.FIRST + 2;
+    private static final int SHOW_DB = Menu.FIRST + 3;
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -160,7 +201,24 @@ public class SignatureActivity extends AppCompatActivity implements ColorPickerD
                 return true;
 
             case SAVE_MENU_ID:
+                Bitmap bmp = mv.getDrawingCache();
+                Bitmap resizedBmp = getScaledBitmap(bmp, 300, 300);
+                String base64str = BitmapToBase64Str(resizedBmp);
+                Constants.TTD ttd;
+              //  if (tipe_ttd.equals("kurir")) ttd = Constants.TTD.KURIR;
+                //else ttd = Constants.TTD.PEMILIK;
 
+              //  Toast.makeText(getApplicationContext(),"Tipe TTD: "+tipe_ttd, Toast.LENGTH_SHORT).show();
+
+                db.assignSignature(item_id, tipe_ttd, base64str);
+                //int len = base64str.length();
+                //Toast.makeText(getApplicationContext(), ""+len, Toast.LENGTH_SHORT).show();
+                return true;
+
+            case SHOW_DB:
+                ScannedItem scannedItem = db.getItem(item_id);
+                Toast.makeText(getApplicationContext(), ""+scannedItem.getAlamat()+" "+scannedItem.getId()+" "+scannedItem.getNoRef()+" "+scannedItem.getTtd().length()+" "+scannedItem.getTtdKurir().length(),
+                        Toast.LENGTH_SHORT).show();
                 return true;
         }
 
@@ -174,6 +232,7 @@ public class SignatureActivity extends AppCompatActivity implements ColorPickerD
         menu.add(0, COLOR_MENU_ID, 0, "Ganti warna").setShortcut('3', 'c');
         menu.add(0, CLEAR_MENU_ID, 0, "Hapus").setShortcut('5', 'z');
         menu.add(0, SAVE_MENU_ID, 0, "Simpan").setShortcut('5', 'z');
+        menu.add(0, SHOW_DB, 0, "Lihat DB").setShortcut('7',  's');
 
         return true;
     }
@@ -215,6 +274,7 @@ public class SignatureActivity extends AppCompatActivity implements ColorPickerD
         bitmap.compress(Bitmap.CompressFormat.PNG, 80, baos);
         byte[] imageBytes = baos.toByteArray();
         String base64String = Base64.encodeToString(imageBytes, Base64.NO_WRAP);
-        return "data:image/png;base64,"+base64String;
+        //return "data:image/png;base64,"+base64String;
+        return base64String;
     }
 }

@@ -63,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
 
                 iii.putExtra("alamat", item.getAlamat());
                 iii.putExtra("noref", item.getNoRef());
+                iii.putExtra("item_id", item.getId());
                 startActivity(iii);
             }
 
@@ -140,5 +141,10 @@ public class MainActivity extends AppCompatActivity {
 
           // Toast.makeText(getApplicationContext(),"Result: "+db.isExist(item), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        moveTaskToBack(true);
     }
 }
