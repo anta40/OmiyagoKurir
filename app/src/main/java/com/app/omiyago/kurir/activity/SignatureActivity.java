@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.EmbossMaskFilter;
 import android.graphics.MaskFilter;
 import android.graphics.Paint;
@@ -62,7 +63,7 @@ public class SignatureActivity extends AppCompatActivity implements ColorPickerD
         mPaint = new Paint();
         mPaint.setAntiAlias(true);
         mPaint.setDither(true);
-        mPaint.setColor(0xFFFF0000);
+        mPaint.setColor(Color.BLACK);
         mPaint.setStyle(Paint.Style.STROKE);
         mPaint.setStrokeJoin(Paint.Join.ROUND);
         mPaint.setStrokeCap(Paint.Cap.ROUND);
@@ -181,10 +182,10 @@ public class SignatureActivity extends AppCompatActivity implements ColorPickerD
         }
     }
 
-    private static final int COLOR_MENU_ID = Menu.FIRST;
-    private static final int CLEAR_MENU_ID = Menu.FIRST + 1;
-    private static final int SAVE_MENU_ID = Menu.FIRST + 2;
-    private static final int SHOW_DB = Menu.FIRST + 3;
+   // private static final int COLOR_MENU_ID = Menu.FIRST;
+    private static final int CLEAR_MENU_ID = Menu.FIRST;
+    private static final int SAVE_MENU_ID = Menu.FIRST + 1;
+   // private static final int SHOW_DB = Menu.FIRST + 3;
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -196,9 +197,11 @@ public class SignatureActivity extends AppCompatActivity implements ColorPickerD
                 mv.clearDrawing();
                 return true;
 
+            /*
             case COLOR_MENU_ID:
                 new ColorPickerDialog(this, this, mPaint.getColor()).show();
                 return true;
+                */
 
             case SAVE_MENU_ID:
                 Bitmap bmp = mv.getDrawingCache();
@@ -212,14 +215,16 @@ public class SignatureActivity extends AppCompatActivity implements ColorPickerD
 
                 db.assignSignature(item_id, tipe_ttd, base64str);
                 //int len = base64str.length();
-                //Toast.makeText(getApplicationContext(), ""+len, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "Tanda tangan "+tipe_ttd+" sudah disimpan.", Toast.LENGTH_SHORT).show();
                 return true;
 
+            /*
             case SHOW_DB:
                 ScannedItem scannedItem = db.getItem(item_id);
                 Toast.makeText(getApplicationContext(), ""+scannedItem.getAlamat()+" "+scannedItem.getId()+" "+scannedItem.getNoRef()+" "+scannedItem.getTtd().length()+" "+scannedItem.getTtdKurir().length(),
                         Toast.LENGTH_SHORT).show();
                 return true;
+                */
         }
 
         return super.onOptionsItemSelected(item);
@@ -229,10 +234,10 @@ public class SignatureActivity extends AppCompatActivity implements ColorPickerD
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
 
-        menu.add(0, COLOR_MENU_ID, 0, "Ganti warna").setShortcut('3', 'c');
+      //  menu.add(0, COLOR_MENU_ID, 0, "Ganti warna").setShortcut('3', 'c');
         menu.add(0, CLEAR_MENU_ID, 0, "Hapus").setShortcut('5', 'z');
         menu.add(0, SAVE_MENU_ID, 0, "Simpan").setShortcut('5', 'z');
-        menu.add(0, SHOW_DB, 0, "Lihat DB").setShortcut('7',  's');
+    //    menu.add(0, SHOW_DB, 0, "Lihat DB").setShortcut('7',  's');
 
         return true;
     }
