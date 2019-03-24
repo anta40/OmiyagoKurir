@@ -5,15 +5,28 @@
     android:orientation="vertical"
     tools:context=".activity.PickupFormActivity" >
 
+    <Space
+        android:layout_width="1dp"
+        android:layout_height="100dp"/>
+
     <TextView
         android:id="@+id/tv_pickup_noref"
         android:layout_width="match_parent"
+        android:gravity="center"
+        android:textSize="24dp"
+        android:textStyle="bold"
         android:layout_height="wrap_content" />
 
     <TextView
         android:id="@+id/tv_pickup_alamat"
+        android:gravity="center"
+        android:textSize="18dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
+
+    <Space
+        android:layout_width="1dp"
+        android:layout_height="30dp"/>
 
     <EditText
         android:id="@+id/edt_nama_penerima"
