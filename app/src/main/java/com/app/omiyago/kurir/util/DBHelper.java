@@ -126,6 +126,13 @@ public class DBHelper extends SQLiteOpenHelper {
         db.close();
     }
 
+    public void deleteItem(int item_id){
+        SQLiteDatabase db = this.getWritableDatabase();
+        String query = "DELETE FROM tbl_scanned_item WHERE item_id="+item_id;
+        db.rawQuery(query, null);
+        db.close();
+    }
+
     public ScannedItem getItem(int item_id){
         ScannedItem result = null;
         SQLiteDatabase db = this.getReadableDatabase();

@@ -5,7 +5,7 @@ package com.app.omiyago.kurir.util;
  */
 public final class URLConfig {
 
-    private static String BASE_URL = "https://dapuromiyago.com/api/";
-    public static String API_LOGIN = BASE_URL + "login";
-
+    private static String BASE_URL = "http://api.developlagi.net";
+    public static String API_LOGIN = BASE_URL + "/login";
+    public static String GET_TOKEN_URL = "http://www.developlagi.net/tester/token/admin";
 }

@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.app.omiyago.kurir.R;
 import com.app.omiyago.kurir.util.PrefUtil;
@@ -31,9 +32,11 @@ public class LoginActivity extends AppCompatActivity {
 
     private EditText etNama, etPassword;
     private Button btnLogin;
-    private LoginTask loginTask;
     private ProgressDialog pdialog;
     private SessionManager session;
+    private GetTokenTask getTokenTask;
+    private GetAuthTokenToken getAuthTokenTask;
+    private LoginWithXAuth loginTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,43 +65,97 @@ public class LoginActivity extends AppCompatActivity {
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                loginTask = new LoginTask(etNama.getText().toString(), etPassword.getText().toString());
-                loginTask.execute();
+                getTokenTask = new GetTokenTask();
+                getTokenTask.execute();
             }
         });
     }
 
-    class LoginTask extends AsyncTask<String, Void, String> {
+    class GetTokenTask extends AsyncTask<String, Void, String>{
 
         private String responseServer;
-        private String email, password;
 
-        public LoginTask(String email, String password){
-            this.email = email;
-            this.password = password;
+        public GetTokenTask(){
+            responseServer = "";
         }
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
             pdialog.show();
-            responseServer = "";
         }
 
         @Override
         protected String doInBackground(String... strings) {
             OkHttpClient httpClient = new OkHttpClient();
 
+            Request httpRequest = new Request.Builder()
+                    .url(URLConfig.GET_TOKEN_URL)
+                    .build();
+
+            Response httpResponse = null;
+
+            try {
+                httpResponse = httpClient.newCall(httpRequest).execute();
+            }
+            catch (IOException ioe){
+                ioe.printStackTrace();
+            }
+
+            try {
+                if (httpResponse != null){
+                    responseServer = httpResponse.body().string();
+                }
+            }
+            catch (IOException ioe){
+                ioe.printStackTrace();
+            }
+
+            return responseServer;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+
+            getAuthTokenTask = new GetAuthTokenToken(etNama.getText().toString(), etPassword.getText().toString(), s);
+            getAuthTokenTask.execute();
+        }
+    }
+
+    class LoginWithXAuth extends AsyncTask<String, Void, String>{
+        private String email, password, bearer, xauth;
+        private String responseServer;
+
+        public LoginWithXAuth(String email, String password, String bearer, String xauth){
+            this.email = email;
+            this.password = password;
+            this.bearer = bearer;
+            this.xauth = xauth;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            responseServer = "";
+        }
+
+
+        @Override
+        protected String doInBackground(String... strings) {
+            OkHttpClient httpClient = new OkHttpClient();
+
             RequestBody reqBody = new FormBody.Builder()
-                    .add("email",email)
-                    .add("password",password)
+                    .add("data[Employee][email]",email)
+                    .add("data[Employee][password]",password)
                     .build();
 
             Request httpRequest = new Request.Builder()
                     .url(URLConfig.API_LOGIN)
-                    .addHeader("Accept","application/json")
-                    .addHeader("Content-Type","application/json")
-                    .addHeader("Authorization", PrefUtil.AUTH_BEARER)
+                    .addHeader("X-Consumer-Client",PrefUtil.X_CONSUMER_CLIENT)
+                    .addHeader("X-Consumer-Passcode",PrefUtil.X_CONSUMER_PASSCODE)
+                    .addHeader("Bearer", bearer)
+                    .addHeader("X-Auth", xauth)
                     .post(reqBody)
                     .build();
 
@@ -128,42 +185,114 @@ public class LoginActivity extends AppCompatActivity {
             super.onPostExecute(s);
 
             pdialog.dismiss();
+            try {
+                JSONObject jsobj = new JSONObject(s);
+                String loginPayload = jsobj.getString("payload");
 
-            if (isOK(s)) {
-                try {
-                    JSONObject jsObj = new JSONObject(s);
-                    String token = jsObj.get("token").toString();
 
-                    session.createLoginSession(token);
+                if (loginPayload.equalsIgnoreCase("null")){
+                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(LoginActivity.this);
+                    alertDialogBuilder.setTitle("OmiyagoKurir");
+                    alertDialogBuilder
+                            .setMessage("Login gagal. Coba ulangi lagi.")
+                            .setCancelable(true)
+                            .setPositiveButton("OK",new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,int id) {
+                                    dialog.cancel();
+                                }
+                            });
+
+                    AlertDialog dialog = alertDialogBuilder.create();
+                    dialog.show();
+                }
+                else {
+                    session.createLoginSession(loginPayload);
                     Intent iii = new Intent(LoginActivity.this, MainActivity.class);
                     startActivity(iii);
                     finish();
                 }
-                catch (JSONException je) {
-                    je.printStackTrace();
-                }
-            }
-            else {
-                AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(LoginActivity.this);
-                alertDialogBuilder.setTitle("OmiyagoKurir");
-                alertDialogBuilder
-                        .setMessage("Login gagal. Coba ulangi lagi.")
-                        .setCancelable(true)
-                        .setPositiveButton("OK",new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog,int id) {
-                                dialog.cancel();
-                            }
-                        });
 
-                AlertDialog dialog = alertDialogBuilder.create();
-                dialog.show();
             }
+            catch (JSONException je){
 
+            }
         }
     }
 
-    private static boolean isOK(String input) {
-        return input.contains("\"success\":\"success\"");
+    class GetAuthTokenToken extends AsyncTask<String, Void, String>{
+
+        private String responseServer;
+        private String email, password;
+        private String bearer;
+
+        public GetAuthTokenToken(String email, String password, String bearer){
+            this.bearer = bearer;
+            this.email = email;
+            this.password = password;
+            responseServer = "";
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected String doInBackground(String... strings) {
+
+            OkHttpClient httpClient = new OkHttpClient();
+
+            RequestBody reqBody = new FormBody.Builder()
+                    .add("data[Employee][email]",email)
+                    .add("data[Employee][password]",password)
+                    .build();
+
+            Request httpRequest = new Request.Builder()
+                    .url(URLConfig.API_LOGIN)
+                    .addHeader("X-Consumer-Client",PrefUtil.X_CONSUMER_CLIENT)
+                    .addHeader("X-Consumer-Passcode",PrefUtil.X_CONSUMER_PASSCODE)
+                    .addHeader("Bearer", bearer)
+                    .post(reqBody)
+                    .build();
+
+            Response httpResponse = null;
+
+            try {
+                httpResponse = httpClient.newCall(httpRequest).execute();
+            }
+            catch (IOException ioe){
+                ioe.printStackTrace();
+            }
+
+            try {
+                if (httpResponse != null){
+                    responseServer = httpResponse.body().string();
+                }
+            }
+            catch (IOException ioe){
+                ioe.printStackTrace();
+            }
+
+            return responseServer;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            pdialog.dismiss();
+
+            String resp = s.replace("Result:","");
+            resp = resp.trim();
+
+            try {
+                JSONObject jsobj = new JSONObject(resp);
+                loginTask = new LoginWithXAuth(email, password, bearer, jsobj.getString("payload"));
+                loginTask.execute();
+            }
+            catch (JSONException je){
+
+            }
+        }
     }
 
     @Override
@@ -172,6 +301,14 @@ public class LoginActivity extends AppCompatActivity {
 
         if (loginTask != null){
             loginTask.cancel(true);
+        }
+
+        if (getTokenTask != null){
+            getTokenTask.cancel(true);
+        }
+
+        if (getAuthTokenTask != null){
+            getAuthTokenTask.cancel(true);
         }
     }
 }

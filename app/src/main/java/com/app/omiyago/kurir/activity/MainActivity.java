@@ -70,6 +70,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onDelete(View v, int position) {
 
+                if (scannedItemList.size() > 0){
+                    ScannedItem item = scannedItemList.get(position);
+                    db.deleteItem(item.getId());
+                    scannedItemList.remove(position);
+                }
             }
         });
 
