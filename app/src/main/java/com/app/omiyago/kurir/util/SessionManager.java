@@ -19,6 +19,8 @@ public class SessionManager {
 
     private static final String IS_LOGIN = "IsLoggedIn";
     public static final String KEY_TOKEN = "token";
+    public static final String KEY_BEARER = "bearer";
+    public static final String KEY_XAUTH = "xauth";
 
     public SessionManager(Context context){
         this.context = context;
@@ -26,9 +28,10 @@ public class SessionManager {
         editor = pref.edit();
     }
 
-    public void createLoginSession(String token){
+    public void createLoginSession(String bearer, String xauth){
         editor.putBoolean(IS_LOGIN, true);
-        editor.putString(KEY_TOKEN, token);
+        editor.putString(KEY_BEARER, bearer);
+        editor.putString(KEY_XAUTH, xauth);
         editor.commit();
     }
 
@@ -64,6 +67,9 @@ public class SessionManager {
         context.startActivity(iii);
     }
 
+    public String getKey(String keyType){
+        return pref.getString(keyType, "");
+    }
 
     /*
     public boolean isDebugModeEnabled(){

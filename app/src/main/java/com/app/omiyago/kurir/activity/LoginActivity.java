@@ -206,7 +206,7 @@ public class LoginActivity extends AppCompatActivity {
                     dialog.show();
                 }
                 else {
-                    session.createLoginSession(loginPayload);
+                    session.createLoginSession(bearer, xauth);
                     Intent iii = new Intent(LoginActivity.this, MainActivity.class);
                     startActivity(iii);
                     finish();

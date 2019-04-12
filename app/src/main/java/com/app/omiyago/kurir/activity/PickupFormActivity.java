@@ -2,6 +2,7 @@ package com.app.omiyago.kurir.activity;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -14,8 +15,19 @@ import android.widget.Toast;
 import com.app.omiyago.kurir.R;
 import com.app.omiyago.kurir.util.Constants;
 import com.app.omiyago.kurir.util.DBHelper;
+import com.app.omiyago.kurir.util.PrefUtil;
+import com.app.omiyago.kurir.util.SessionManager;
+import com.app.omiyago.kurir.util.URLConfig;
 
 import org.w3c.dom.Text;
+
+import java.io.IOException;
+
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class PickupFormActivity extends AppCompatActivity {
 
@@ -25,6 +37,8 @@ public class PickupFormActivity extends AppCompatActivity {
     String alamat, noref;
     int item_id;
     DBHelper db;
+    SessionManager session;
+    UpdateItemStatusTask updateItemStatusTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +48,7 @@ public class PickupFormActivity extends AppCompatActivity {
         getSupportActionBar().setTitle("Form Pick Up");
 
         db = new DBHelper(getApplicationContext());
+        session = new SessionManager(getApplicationContext());
 
         alamat = getIntent().getStringExtra("alamat");
         noref = getIntent().getStringExtra("noref");
@@ -86,6 +101,7 @@ public class PickupFormActivity extends AppCompatActivity {
 
 
                 if (val1 && val2 && val3 && val4){
+                    /*
                     AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(PickupFormActivity.this);
                     alertDialogBuilder.setTitle("OmiyagoKurir");
                     alertDialogBuilder
@@ -99,6 +115,11 @@ public class PickupFormActivity extends AppCompatActivity {
 
                     AlertDialog dialog = alertDialogBuilder.create();
                     dialog.show();
+                    */
+
+                    updateItemStatusTask = new UpdateItemStatusTask(item_id);
+                    updateItemStatusTask.execute();
+
                 }
                 else {
                     AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(PickupFormActivity.this);
@@ -118,5 +139,75 @@ public class PickupFormActivity extends AppCompatActivity {
             }
 
         });
+    }
+
+    class UpdateItemStatusTask extends AsyncTask<String, Void, String> {
+        private String responseServer;
+        private int itemId;
+
+        public UpdateItemStatusTask(int itemId){
+            this.itemId = itemId;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            responseServer = "";
+        }
+
+        @Override
+        protected String doInBackground(String... strings) {
+            OkHttpClient httpClient = new OkHttpClient();
+
+            String updateUrl = "http://api.developlagi.net/order_states/update/" + itemId;
+
+            RequestBody reqBody = new FormBody.Builder()
+                    .add("status_for_order_id", "5")
+                    .build();
+
+            Request httpRequest = new Request.Builder()
+                    .url(updateUrl)
+                    .addHeader("X-Consumer-Client", PrefUtil.X_CONSUMER_CLIENT)
+                    .addHeader("X-Consumer-Passcode",PrefUtil.X_CONSUMER_PASSCODE)
+                    .addHeader("Bearer", session.getKey(SessionManager.KEY_BEARER))
+                    .addHeader("X-Auth", session.getKey(SessionManager.KEY_XAUTH))
+                    .post(reqBody)
+                    .build();
+
+            Response httpResponse = null;
+
+            try {
+                httpResponse = httpClient.newCall(httpRequest).execute();
+            }
+            catch (IOException ioe){
+                ioe.printStackTrace();
+            }
+
+            try {
+                if (httpResponse != null){
+                    responseServer = httpResponse.body().string();
+                }
+            }
+            catch (IOException ioe){
+                ioe.printStackTrace();
+            }
+
+            return responseServer;
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            super.onPostExecute(s);
+            Toast.makeText(getApplicationContext(), "Response: "+s, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (updateItemStatusTask != null){
+            updateItemStatusTask.cancel(true);
+        }
     }
 }
